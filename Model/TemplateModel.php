@@ -21,7 +21,7 @@ trait TemplateModel
     protected $syncDetaching = true;
 
     /**
-     * Файлы у нас работаю глобально, это связь для каждой таблицы.
+     * Файлы работаю глобально, это связь для каждой таблицы.
      *
      * @return MorphMany
      */
