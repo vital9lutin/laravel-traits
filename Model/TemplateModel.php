@@ -4,21 +4,14 @@ namespace App\Traits;
 
 
 use App\Exceptions\API\SuccessException;
-use App\Models\DealLocation;
 use App\Models\File;
-use App\Models\User;
 use App\Services\API\FileService;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne, MorphMany};
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
+use Illuminate\Support\{Arr, Str};
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 trait TemplateModel
 {
@@ -154,9 +147,7 @@ trait TemplateModel
             if ($related instanceof BelongsToMany) {
                 $this->syncBelongsToMany($related, $val);
             } elseif ($related instanceof HasMany) {
-                if ($related->getModel() instanceof DealLocation) {
-                    $this->syncHasMany($related, $val);
-                }
+                $this->syncHasMany($related, $val);
             } elseif ($related instanceof HasOne || $related instanceof BelongsTo) {
                 $model->update([$key . "_id" => empty($val['id']) ? null : $val['id']]);
             }
@@ -440,20 +431,15 @@ trait TemplateModel
             return;
         }
 
-        /** @var User $roles */
-        $roles = auth()->guard('api')->user();
-
-        if ($roles && $roles->hasRole(User::ROLE_ADMIN)) {
-            if ($item instanceof File) {
-                $item->forceDelete();
-                return;
-            }
-
-            if (method_exists($item, 'files')) {
-                $item->files()->forceDelete();
-            }
-
+        if ($item instanceof File) {
             $item->forceDelete();
+            return;
         }
+
+        if (method_exists($item, 'files')) {
+            $item->files()->forceDelete();
+        }
+
+        $item->forceDelete();
     }
 }
