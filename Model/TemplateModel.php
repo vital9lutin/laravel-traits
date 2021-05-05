@@ -3,9 +3,6 @@
 namespace App\Traits;
 
 
-use App\Exceptions\API\SuccessException;
-use App\Models\File;
-use App\Services\API\FileService;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne, MorphMany};
@@ -255,36 +252,14 @@ trait TemplateModel
                     continue;
                 }
 
-                $val['model_id'] = $model->id;
-                $val['model'] = get_class($model);
-
-                if (isset($val['tmp_path'])) {
-                    $val['files'] = [$val['tmp_path']];
-                }
-
-                (new FileService())->store(new Request($val));
+                //Здесь реализуем метод загрузки файла
+                //Например: app(FileService::class)->store(new Request($val));
             }
         } catch (Exception $e) {
             Log::error(
-                'При сохранении файла в классе App\Traits\TemplateModel произошла ошибка: ' . $e->getMessage()
+                'При сохранении файла произошла ошибка: ' . $e->getMessage()
             );
         }
-    }
-
-    /**
-     * @param $data
-     * @param bool $syncDetaching
-     * @return Model
-     * @see tmStore
-     * @deprecated
-     */
-    public function store($data, bool $syncDetaching = true): Model
-    {
-        if ($data instanceof Request) {
-            $data = $data->all();
-        }
-
-        return $this->syncDetaching($syncDetaching)->tmSync($data);
     }
 
     /**
@@ -311,23 +286,6 @@ trait TemplateModel
     public function tmUpdate(int $id, array $data, ?Model $model = null): Model
     {
         return $this->tmSync($data, $model, $id);
-    }
-
-    /**
-     * @param int $id
-     *
-     * @see tmDelete
-     * @deprecated
-     */
-    public function deletion(int $id): void
-    {
-        $delete = $this->tmDelete($id);
-
-        if ($delete) {
-            throw new SuccessException('Успешно удалено', 200);
-        }
-
-        throw new Exception('Не найдено', 404);
     }
 
     /**
