@@ -44,39 +44,39 @@ trait TemplateFilter
             function (Builder $query) {
                 $query->where(
                     function (Builder $query) {
-                        $this->tfFilter($query);
+                        $this->builderFilter($query);
                     }
                 )->where(
                     function (Builder $query) {
-                        $this->tfLike($query);
+                        $this->builderSearch($query);
                     }
                 )->where(
                     function (Builder $query) {
-                        $this->tfGlobalSearch($query);
+                        $this->builderGlobalSearch($query);
                     }
                 )->where(
                     function (Builder $query) {
-                        $this->tfHas($query);
+                        $this->builderHas($query);
                     }
                 )->where(
                     function (Builder $query) {
-                        $this->tfDoesntHave($query);
+                        $this->builderDoesntHave($query);
                     }
                 );
             }
         )->orWhere(
             function (Builder $query) {
-                $this->tfEither($query);
+                $this->builderEither($query);
             }
         );
 
 
-        $this->tfSorting($model);
+        $this->builderSorting($model);
 
         return $model;
     }
 
-    private function tfFilter(Builder $model): void
+    private function builderFilter(Builder $model): void
     {
         $data = request()->input('filter', null);
 
@@ -84,25 +84,25 @@ trait TemplateFilter
             return;
         }
 
-        foreach ($this->tfConvertDateForBuilder($data) as $key => $val) {
+        foreach ($this->convertDateForBuilder($data) as $key => $val) {
             if (is_array($val)) {
                 foreach ($val as $k => $v) {
                     $model->whereHas(
                         $key,
                         function ($q) use ($k, $v) {
-                            if ($this->tfHasKeyInModel($q, $k)) {
-                                $this->tfCustomWhere($q, $k, $v);
+                            if ($this->builderHasKeyInModel($q, $k)) {
+                                $this->customWhere($q, $k, $v);
                             }
                         }
                     );
                 }
-            } elseif ($this->tfHasKeyInModel($model, $key)) {
-                $this->tfCustomWhere($model, $key, $val);
+            } elseif ($this->builderHasKeyInModel($model, $key)) {
+                $this->customWhere($model, $key, $val);
             }
         }
     }
 
-    private function tfConvertDateForBuilder(array $data): array
+    private function convertDateForBuilder(array $data): array
     {
         $data = Arr::dot($data);
 
@@ -126,7 +126,7 @@ trait TemplateFilter
         return $whereHas;
     }
 
-    private function tfHasKeyInModel(Builder $model, $key): bool
+    private function builderHasKeyInModel(Builder $model, $key): bool
     {
         $model = $model->getModel();
 
@@ -143,14 +143,14 @@ trait TemplateFilter
         );
     }
 
-    private function tfCustomWhere(Builder $model, string $key, $value): void
+    private function customWhere(Builder $model, string $key, $value): void
     {
         if (strpos($value, '|')) {
             if (strpos($value, '&')) {
                 $model->where(
                     function ($q) use ($value, $key) {
                         foreach (explode('&', $value) as $v) {
-                            $this->tfCustomWherePrefix($q, $key, $v, 'AND');
+                            $this->customWherePrefix($q, $key, $v, 'AND');
                         }
                     }
                 );
@@ -158,31 +158,31 @@ trait TemplateFilter
                 $model->where(
                     function ($q) use ($value, $key) {
                         foreach (explode('||', $value) as $v) {
-                            $this->tfCustomWherePrefix($q, $key, $v, 'OR');
+                            $this->customWherePrefix($q, $key, $v, 'OR');
                         }
                     }
                 );
             } else {
-                $this->tfCustomWherePrefix($model, $key, $value, 'AND');
+                $this->customWherePrefix($model, $key, $value, 'AND');
             }
-        } elseif (is_null($this->tfGetColumnType($model, $key, $value))) {
+        } elseif (is_null($this->getColumnType($model, $key, $value))) {
             $model->whereNull($key);
         } elseif (strpos($value, ';')) {
             $model->whereIn(
                 $key,
                 array_map(
                     function ($v) use ($model, $key) {
-                        return $this->tfGetColumnType($model, $key, $v);
+                        return $this->getColumnType($model, $key, $v);
                     },
                     explode(';', $value)
                 )
             );
         } else {
-            $model->where($key, $this->tfGetColumnType($model, $key, $value));
+            $model->where($key, $this->getColumnType($model, $key, $value));
         }
     }
 
-    private function tfCustomWherePrefix(Builder $model, string $key, $value, string $type): void
+    private function customWherePrefix(Builder $model, string $key, $value, string $type): void
     {
         if (!strpos($value, '|')) {
             return;
@@ -193,7 +193,7 @@ trait TemplateFilter
         $prefix = array_shift($array);
 
         if (in_array($prefix, ["<", ">", "<=", ">=", "<>", "!=", "="])) {
-            $val = $this->tfGetColumnType($model, $key, implode(' ', $array));
+            $val = $this->getColumnType($model, $key, implode(' ', $array));
 
             if ($type === 'OR') {
                 $model->orWhere($key, $prefix, $val);
@@ -203,7 +203,7 @@ trait TemplateFilter
         }
     }
 
-    private function tfGetColumnType(Builder $model, string $key, $val)
+    private function getColumnType(Builder $model, string $key, $val)
     {
         $val = trim($val);
 
@@ -248,7 +248,7 @@ trait TemplateFilter
                 return new Carbon($val);
             } catch (Exception $e) {
                 Log::error(
-                    "В TemplateFilter@tfGetColumnType. Carbon не смог конвертировать дату. key => $key, val => $val"
+                    "В TemplateFilter@getColumnType. Carbon не смог конвертировать дату. key => $key, val => $val"
                 );
 
                 return null;
@@ -276,7 +276,7 @@ trait TemplateFilter
         return $val;
     }
 
-    private function tfLike(Builder $model): void
+    private function builderSearch(Builder $model): void
     {
         $data = request()->input('search', null);
 
@@ -284,12 +284,12 @@ trait TemplateFilter
             return;
         }
 
-        $this->tfSearchQuery($model, $data);
+        $this->searchQuery($model, $data);
     }
 
-    private function tfSearchQuery(Builder $model, $data, string $specifies = 'where'): void
+    private function searchQuery(Builder $model, $data, string $specifies = 'where'): void
     {
-        foreach ($this->tfConvertDateForBuilder($data) as $key => $val) {
+        foreach ($this->convertDateForBuilder($data) as $key => $val) {
             if (is_array($val)) {
                 foreach ($val as $k => $v) {
                     if (strpos($v, ';')) {
@@ -300,7 +300,7 @@ trait TemplateFilter
                         $this->conditionsWhereHas($model, $key, $k, $v, $specifies);
                     }
                 }
-            } elseif ($this->tfHasKeyInModel($model, $key)) {
+            } elseif ($this->builderHasKeyInModel($model, $key)) {
                 if (strpos($val, ';')) {
                     foreach (explode(';', $val) as $value) {
                         $model->where(
@@ -321,7 +321,7 @@ trait TemplateFilter
         $model->{$specifies . 'Has'}(
             $keyRelation,
             function ($query) use ($key, $val) {
-                if ($this->tfHasKeyInModel($query, $key)) {
+                if ($this->builderHasKeyInModel($query, $key)) {
                     $this->conditionsWhere($query, $key, $val, 'where');
                 }
             }
@@ -330,7 +330,7 @@ trait TemplateFilter
 
     private function conditionsWhere(Builder $query, string $key, $val, string $specifies): void
     {
-        $where = $this->tfGetFieldsLike($query, $key, $val);
+        $where = $this->getFieldsLike($query, $key, $val);
 
         if ($where instanceof Expression) {
             $query->{$specifies . 'Raw'}($where);
@@ -339,7 +339,7 @@ trait TemplateFilter
         }
     }
 
-    private function tfGetFieldsLike(Builder $query, string $key, $value)
+    private function getFieldsLike(Builder $query, string $key, $value)
     {
         if ($key === 'full_name' && !in_array($key, $query->getModel()->getFillable())) {
             return DB::raw(
@@ -363,7 +363,7 @@ trait TemplateFilter
         return $search;
     }
 
-    private function tfGlobalSearch(Builder $model): void
+    private function builderGlobalSearch(Builder $model): void
     {
         $string = request()->input('global-search', null);
 
@@ -371,10 +371,10 @@ trait TemplateFilter
             return;
         }
 
-        $this->tfSearchQuery($model, $this->tfGetArrayForGlobalSearch($model, $string), 'orWhere');
+        $this->searchQuery($model, $this->getArrayForGlobalSearch($model, $string), 'orWhere');
     }
 
-    private function tfGetArrayForGlobalSearch(Builder $model, string $string): array
+    private function getArrayForGlobalSearch(Builder $model, string $string): array
     {
         $data = array_diff($model->getModel()->getFillable(), $model->getModel()->getHidden());
 
@@ -387,10 +387,10 @@ trait TemplateFilter
             }
         );
 
-        return $this->tfConvertDateForBuilder(array_filter($data));
+        return $this->convertDateForBuilder(array_filter($data));
     }
 
-    private function tfHas(Builder $model): void
+    private function builderHas(Builder $model): void
     {
         $data = request()->input('has', null);
 
@@ -398,17 +398,17 @@ trait TemplateFilter
             return;
         }
 
-        $this->tfHasQuery($model, $data);
+        $this->builderHasQuery($model, $data);
     }
 
-    private function tfHasQuery(Builder $model, $data): void
+    private function builderHasQuery(Builder $model, $data): void
     {
         foreach (Arr::dot($data) as $key => $val) {
             $model->has(Str::camel($key));
         }
     }
 
-    private function tfDoesntHave(Builder $model): void
+    private function builderDoesntHave(Builder $model): void
     {
         $data = request()->input('doesnt', null);
 
@@ -416,17 +416,17 @@ trait TemplateFilter
             return;
         }
 
-        $this->tfDoesntHaveQuery($model, $data);
+        $this->builderDoesntHaveQuery($model, $data);
     }
 
-    private function tfDoesntHaveQuery(Builder $model, $data): void
+    private function builderDoesntHaveQuery(Builder $model, $data): void
     {
         foreach (Arr::dot($data) as $key => $val) {
             $model->doesntHave(Str::camel($key));
         }
     }
 
-    private function tfEither(Builder $model): void
+    private function builderEither(Builder $model): void
     {
         $data = request()->input('either', null);
 
@@ -434,10 +434,10 @@ trait TemplateFilter
             return;
         }
 
-        $this->tfSearchQuery($model, $data, 'orWhere');
+        $this->searchQuery($model, $data, 'orWhere');
     }
 
-    private function tfSorting(Builder $model): void
+    private function builderSorting(Builder $model): void
     {
         $data = request()->input('sorting', null);
 
@@ -448,7 +448,7 @@ trait TemplateFilter
         $model = $model->withoutGlobalScope('order');
 
         foreach ($data as $column => $direction) {
-            if ($this->tfHasKeyInModel($model, $column)) {
+            if ($this->builderHasKeyInModel($model, $column)) {
                 if ($column === 'full_name'
                     && $model->getModel() instanceof Contact
                     && !in_array($column, $model->getModel()->getFillable(), true)
