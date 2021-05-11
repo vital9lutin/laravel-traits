@@ -34,9 +34,9 @@ trait TemplateModel
      * @param Model|null $model
      * @return Model
      */
-    public function tmStore(array $data, ?Model $model = null): Model
+    public function store(array $data, ?Model $model = null): Model
     {
-        return $this->tmSync($data, $model);
+        return $this->sync($data, $model);
     }
 
     /**
@@ -48,7 +48,7 @@ trait TemplateModel
      * @param int|null $id
      * @return Model
      */
-    private function tmSync(array $data, ?Model $model = null, ?int $id = null): Model
+    private function sync(array $data, ?Model $model = null, ?int $id = null): Model
     {
         $files = null;
 
@@ -78,7 +78,7 @@ trait TemplateModel
             $keyName = $this->keyForStore;
         }
 
-        $updateOrCreate = $this->tmFilterData($data, $model);
+        $updateOrCreate = $this->filterData($data, $model);
 
         if ($id && $model::where($keyName, $id)->exists()) {
             $model = $model::where($keyName, $id)->first();
@@ -87,10 +87,10 @@ trait TemplateModel
             $model = $model::create($updateOrCreate);
         }
 
-        $this->tmRelationsSync($model, $data);
+        $this->relationsSync($model, $data);
 
         if (!empty($files)) {
-            $this->tmUploadFiles($files, $model);
+            $this->uploadFiles($files, $model);
         }
 
         return $model;
@@ -104,7 +104,7 @@ trait TemplateModel
      * @param Model $model
      * @return array
      */
-    private function tmFilterData(array $data, Model $model): array
+    private function filterData(array $data, Model $model): array
     {
         return array_filter(
             $data,
@@ -121,7 +121,7 @@ trait TemplateModel
      * @param Model $model
      * @param array $data
      */
-    private function tmRelationsSync(Model $model, array $data): void
+    private function relationsSync(Model $model, array $data): void
     {
         foreach ($data as $key => $val) {
             $relatedName = Str::camel($key);
@@ -152,7 +152,7 @@ trait TemplateModel
     private function syncBelongsToMany($related, $val): void
     {
         $existingIds = $related->get()->pluck('id')->toArray();
-        $ids = $this->tmGetIds($val);
+        $ids = $this->getIds($val);
 
         if (empty($ids)) {
             $related->sync([]);
@@ -180,7 +180,7 @@ trait TemplateModel
      * @param array $array
      * @return array
      */
-    private function tmGetIds(array $array): array
+    private function getIds(array $array): array
     {
         if (!Arr::has($array, 'id')) {
             $array = Arr::pluck($array, 'id');
@@ -203,7 +203,7 @@ trait TemplateModel
     private function syncHasMany(HasMany $related, $val): void
     {
         $existingIds = $related->get()->pluck($related->getLocalKeyName())->toArray();
-        $ids = $this->tmGetIds($val);
+        $ids = $this->getIds($val);
 
         if (empty($ids)) {
             return;
@@ -235,7 +235,7 @@ trait TemplateModel
      * @param array $files
      * @param Model $model
      */
-    private function tmUploadFiles(array $files, Model $model): void
+    private function uploadFiles(array $files, Model $model): void
     {
         try {
             foreach ($files as $val) {
@@ -274,9 +274,9 @@ trait TemplateModel
      * @param Model|null $model
      * @return Model
      */
-    public function tmUpdate(int $id, array $data, ?Model $model = null): Model
+    public function updateItem(int $id, array $data, ?Model $model = null): Model
     {
-        return $this->tmSync($data, $model, $id);
+        return $this->sync($data, $model, $id);
     }
 
     /**
@@ -287,7 +287,7 @@ trait TemplateModel
      * @param Model|null $model
      * @return bool
      */
-    public function tmDelete(int $id, ?Model $model = null): bool
+    public function deleteItem(int $id, ?Model $model = null): bool
     {
         /** @var Model $model */
         $model = $model ?: $this;
@@ -301,11 +301,11 @@ trait TemplateModel
         $data = request()->all();
 
         if (!empty($data)) {
-            $this->tmRelationDetach($item, $data);
+            $this->relationDetach($item, $data);
             return true;
         }
 
-        $this->tmDeleteItems($item);
+        $this->deleteItems($item);
 
         return true;
     }
@@ -316,7 +316,7 @@ trait TemplateModel
      * @param Model $model
      * @param array $data
      */
-    private function tmRelationDetach(Model $model, array $data): void
+    private function relationDetach(Model $model, array $data): void
     {
         foreach ($data as $key => $val) {
             $relatedName = Str::camel($key);
@@ -363,7 +363,7 @@ trait TemplateModel
      *
      * @param Model $item
      */
-    private function tmDeleteItems(Model $item): void
+    private function deleteItems(Model $item): void
     {
         if (!request()->input('force')) {
             if ($item instanceof File) {
