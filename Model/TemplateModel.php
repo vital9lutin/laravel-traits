@@ -34,7 +34,7 @@ trait TemplateModel
      * @param Model|null $model
      * @return Model
      */
-    public function store(array $data, ?Model $model = null): Model
+    public function createItem(array $data, ?Model $model = null): Model
     {
         return $this->sync($data, $model);
     }

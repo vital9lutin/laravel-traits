@@ -1,9 +1,9 @@
 Метод, который отвечает за создание и обновления записи. Так же самостоятельно устанавливает связи. Метод работает только с **Model**, он интегрирован в каждую известную модель. 
 
 В каждой модели доступны методы:
-* ```tmStore``` - создание записи и всех связей. 
-* ```tmUpdate``` - обновление записи и всех связей.
-* ```tmDelete``` - удаления записи и ее связей если они передаются в REQUEST
+* ```createItem``` - создание записи и всех связей. 
+* ```updateItem``` - обновление записи и всех связей.
+* ```deleteItems``` - удаления записи и ее связей если они передаются в REQUEST
 
 ### tmStore
 
@@ -12,24 +12,24 @@
     + ```$model``` - модель для создания (_если этот метод вызывать напрямую из модели, то этот параметр не обязателен_)
 
 ```php    
-public function tmStore(array $data, ?Model $model = null): Model
+public function createItem(array $data, ?Model $model = null): Model
 {
-  return $this->tmSync($data, $model);
+  return $this->sync($data, $model);
 }
 ```
 
 #### Например: 
 Модель в которой объявленный этот **trait**
 ```php
-$model = (new Contact())->tmStore(['name'=>'test']);
+$model = (new Contact())->createItem(['name'=>'test']);
 ``` 
 Или **DI**
 ```php
-$model = $this->contact->tmStore(['name'=>'test']);
+$model = $this->contact->createItem(['name'=>'test']);
 ``` 
 Модель в которой **не** объявленный этот **trait**. Класс обязательно должен быть Model
 ```php
 use TemplateModel;
 
-$model = $this->tmStore(['name'=>'test'], new User());
+$model = $this->createItem(['name'=>'test'], new User());
 ``` 
