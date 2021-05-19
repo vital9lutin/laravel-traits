@@ -6,14 +6,10 @@ namespace App\Traits;
 use App\Models\Contact;
 use Carbon\Carbon;
 use Exception;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Model, Builder};
 use Illuminate\Database\Query\Expression;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\{Cache, DB, Log};
+use Illuminate\Support\{Str, Arr};
 
 trait TemplateFilter
 {
