@@ -106,6 +106,7 @@ trait SortTrait
                     $sql = substr_replace($sql, $replace, $pos, strlen($needle));
                 }
             }
+
             return $sql;
         };
 
